@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect,Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -58,7 +58,7 @@ const getStrengthWidth = (score: number) => {
 
 /* ================= COMPONENT ================= */
 
-export default function RegisterPage() {
+function RegisterContent() {
   const searchParams = useSearchParams()
   const roleParam = searchParams.get('role')
   const router = useRouter()
@@ -408,4 +408,12 @@ export default function RegisterPage() {
       </div>
     </div>
   )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <RegisterContent />
+    </Suspense>
+  );
 }
