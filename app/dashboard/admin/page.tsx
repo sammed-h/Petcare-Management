@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import {
@@ -22,7 +22,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { SidebarLayout } from '@/components/sidebar-layout'
 
-export default function AdminDashboard() {
+function AdminDashboardContent() {
   const searchParams = useSearchParams()
   const tabParam = searchParams.get('tab') || 'managers'
 
@@ -337,7 +337,7 @@ export default function AdminDashboard() {
                                   : request.status === 'rejected'
                                   ? 'destructive'
                                   : 'outline'
-                              }
+                                }
                               className="text-xs"
                             >
                               {request.status}
@@ -398,5 +398,13 @@ export default function AdminDashboard() {
         </Tabs>
       </div>
     </SidebarLayout>
+  )
+}
+
+export default function AdminDashboard() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AdminDashboardContent />
+    </Suspense>
   )
 }
