@@ -1,0 +1,145 @@
+========================================================================
+                      PETCARE MANAGEMENT SYSTEM
+                      PROJECT DOCUMENTATION
+========================================================================
+
+1. MODULE DESCRIPTION
+------------------------------------------------------------------------
+
+A. Authentication & Authorization Module
+   - Purpose: Secure user access and role-based navigation.
+   - Inputs: Email, Password, User Role (Pet Owner / Pet Caretaker / Admin).
+   - Processing Logic: 
+     - Passwords are encrypted using BcryptJS.
+     - Login validates credentials and generates a JSON Web Token (JWT).
+     - JWT is stored in HTTP-only cookies for session management.
+     - Middleware intercepts requests to /dashboard/* and verifies the token and role.
+   - Outputs: Secure session, role-specific dashboard access.
+
+B. Pet Management Module
+   - Purpose: Allow users to register and manage their pets.
+   - Inputs: Pet Name, Breed, Age, Medical Info, Photo.
+   - Processing Logic: Validates data and stores it with a reference to the owner's User ID.
+   - Outputs: List of pets displayed on the User Dashboard.
+
+C. Caretaker Discovery Module
+   - Purpose: Enable pet owners to find verified caretakers.
+   - Inputs: Search Query (Name/Company), Pincode.
+   - Processing Logic: 
+     - Uses MongoDB Regex ($regex) for case-insensitive partial matching of company names and caretaker names.
+     - Filters the user database for those with the 'zoo_manager' role.
+   - Outputs: Filtered list of verified pet caretakers.
+
+D. Booking & Care Request Module
+   - Purpose: Facilities care service transactions between owners and caretakers.
+   - Inputs: Selected Pet, Selected Caretaker, Start Date, End Date, Notes.
+   - Processing Logic: 
+     - Creates a CareRequest entry with 'pending' status.
+     - Caretakers can accept or reject requests.
+   - Outputs: Status updates on user and caretaker dashboards.
+
+E. Real-Time Tracking & Activity Logging Module
+   - Purpose: Transparent monitoring of pet care activities.
+   - Inputs: Activity Type (Feeding/Walking), Photos, Browser Geolocation (Lat/Lng).
+   - Processing Logic: 
+     - Captures browser coordinates using Geolocation API.
+     - Renders locations on a Leaflet map.
+     - Links activities to specific Care Requests.
+   - Outputs: Interactive activity timeline with maps and photo proof.
+
+F. Admin Management Module
+   - Purpose: Oversight of the platform and caretaker verification.
+   - Inputs: Verification documents (Aadhaar/Company ID).
+   - Processing Logic: Admin manually reviews uploaded IDs and toggles 'isVerified' status.
+   - Outputs: Notification of verification success/revocation.
+
+
+2. ALGORITHM / METHODOLOGY IMPLEMENTATION
+------------------------------------------------------------------------
+
+A. Authentication Algorithm (Practical Execution)
+   1. User submits login form.
+   2. System fetches User document by email.
+   3. Bcrypt compares submitted password with stored hash: 
+      `bcrypt.compare(plaintext, hashedPassword)`
+   4. If valid, sign JWT with Payload `{ userId, role }` and Secret Key.
+   5. Set Cookie with `httpOnly: true` and `SameSite: Lax`.
+
+B. Real-Time Location Tracking Methodology
+   1. Initialize `navigator.geolocation.watchPosition()`.
+   2. Capture `coords.latitude` and `coords.longitude`.
+   3. Update React State with current coordinates.
+   4. Pass coordinates to Leaflet `<MapContainer>` component.
+   5. Use `useMap().setView(center, zoom)` to auto-center the map on movement.
+
+C. Search & Filter Algorithm
+   - Methodology: Case-insensitive partial string matching via MongoDB.
+   - Pseudo-code:
+     ```
+     FUNCTION getCaretakers(query)
+       dbQuery = { role: 'zoo_manager' }
+       IF query.name:
+         dbQuery.name = { $regex: query.name, $options: 'i' }
+       IF query.company:
+         dbQuery.companyName = { $regex: query.company, $options: 'i' }
+       RETURN db.users.find(dbQuery)
+     END FUNCTION
+     ```
+
+D. Mathematical Formula (Distance/Zoom Backup)
+   - While Leaflet handles projection, the fallback "Open in Google Maps" uses standard URL coordinate mapping:
+     `https://www.google.com/maps?q={latitude},{longitude}`
+
+
+3. DATABASE DESIGN
+------------------------------------------------------------------------
+
+A. Database Schema (MongoDB / Mongoose)
+
+   Table: Users
+   - _id: ObjectId (Primary Key)
+   - email: String (Unique Index)
+   - password: String (Hashed)
+   - role: Enum ['user', 'zoo_manager', 'admin']
+   - isVerified: Boolean
+   - profilePhoto: String (URL)
+   - companyName: String (Caretaker specific)
+   - verification: Object { aadhaarUrl, companyIdUrl }
+
+   Table: Pets
+   - _id: ObjectId (Primary Key)
+   - owner: ObjectId (Foreign Key -> Users._id)
+   - name: String
+   - breed: String
+   - age: Number
+
+   Table: CareRequests
+   - _id: ObjectId (Primary Key)
+   - pet: ObjectId (Foreign Key -> Pets._id)
+   - owner: ObjectId (Foreign Key -> Users._id)
+   - zooManager: ObjectId (Foreign Key -> Users._id)
+   - status: Enum ['pending', 'accepted', 'rejected', 'completed']
+   - startDate: Date
+   - endDate: Date
+
+   Table: Activities
+   - _id: ObjectId (Primary Key)
+   - careRequest: ObjectId (Foreign Key -> CareRequests._id)
+   - activityType: Enum ['feeding', 'walking', 'playing'...]
+   - location: Object { latitude, longitude, address }
+   - photos: Array [String]
+
+
+4. EXECUTION & OUTPUT SCREENSHOTS DESCRIPTION
+------------------------------------------------------------------------
+(Since this is a text file, valid UI states are described below)
+
+- Home Page: Featuring a Navbar with "Find Caretakers" and a Hero CTA "Check the pet caretaker".
+- Caretaker Listing: A grid of verified caretakers with filters for Name, Company, and Pincode. Each card shows rating and status.
+- User Dashboard: Displays "Welcome [Name]", registered pets, and status of outgoing care requests.
+- Log Activity Modal: Found on Caretaker Dashboard. Includes real-time map preview of current location, photo capture, and activity type selection.
+- Admin Panel: Table list of all users and caretakers with "Verify" buttons and document preview modals.
+
+========================================================================
+                      END OF DOCUMENTATION
+========================================================================
