@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,7 @@ function LoginContent() {
       }
 
       // Redirect to the page they were trying to access, or default dashboard
+      toast.success("Login successful!");
       if (redirect) {
         router.push(redirect);
       } else if (data.user.role === "user") {
@@ -55,6 +57,7 @@ function LoginContent() {
         router.push("/dashboard/admin");
       }
     } catch (err) {
+      toast.error(err.message || "Login failed");
       setError(err.message);
     } finally {
       setLoading(false);

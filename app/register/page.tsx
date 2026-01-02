@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useEffect,Suspense } from 'react'
+import { useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { toast } from "sonner"
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -20,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { PawPrint, Eye, EyeOff } from 'lucide-react'
+import { PawPrint, Eye, EyeOff, Upload, Camera, X } from 'lucide-react'
 
 /* ================= PASSWORD HELPERS ================= */
 
@@ -48,17 +50,25 @@ const getStrengthColor = (score: number) => {
 }
 
 const getStrengthWidth = (score: number) => {
-  if (score === 0) return 'w-0'
-  if (score === 1) return 'w-1/5'
-  if (score === 2) return 'w-2/5'
-  if (score === 3) return 'w-3/5'
-  if (score === 4) return 'w-4/5'
-  return 'w-full'
+  switch (score) {
+    case 0: return 'w-0'
+    case 1: return 'w-1/5'
+    case 2: return 'w-2/5'
+    case 3: return 'w-3/5'
+    case 4: return 'w-4/5'
+    case 5: return 'w-full'
+    default: return 'w-0'
+  }
 }
 
 /* ================= COMPONENT ================= */
 
 function RegisterContent() {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [isCameraOpen, setIsCameraOpen] = useState(false)
+  const [stream, setStream] = useState<MediaStream | null>(null)
+  
   const searchParams = useSearchParams()
   const roleParam = searchParams.get('role')
   const router = useRouter()
@@ -69,7 +79,16 @@ function RegisterContent() {
     confirmPassword: '',
     role: roleParam === 'zoo_manager' ? 'zoo_manager' : 'user',
     phone: '',
+
     address: '',
+    pincode: '',
+    // Caretaker specific
+    profilePhoto: '',
+    specialization: '',
+    experience: '',
+    serviceCharge: '',
+    companyName: '',
+    companyIdNumber: '',
   })
 
   const [showPassword, setShowPassword] = useState(false)
@@ -97,25 +116,21 @@ function RegisterContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Validate passwords match
+    if (formData.password !== formData.confirmPassword) {
+      return // Should be handled by UI state but double check
+    }
+
     setLoading(true)
     setError('')
-
-    if (passwordScore < 5) {
-      setError('Please create a strong password meeting all requirements.')
-      setLoading(false)
-      return
-    }
-
-    if (!passwordsMatch) {
-      setError('Passwords do not match.')
-      setLoading(false)
-      return
-    }
 
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(formData),
       })
 
@@ -125,11 +140,110 @@ function RegisterContent() {
         throw new Error(data.error || 'Registration failed')
       }
 
-      router.push('/login')
+      toast.success("Registration successful! Please login.");
+      router.push('/login?registered=true')
     } catch (err: any) {
+      toast.error(err.message || "Registration failed");
       setError(err.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const img = new Image()
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          const MAX_WIDTH = 800
+          const MAX_HEIGHT = 800
+          let width = img.width
+          let height = img.height
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width
+              width = MAX_WIDTH
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height
+              height = MAX_HEIGHT
+            }
+          }
+
+          canvas.width = width
+          canvas.height = height
+          const ctx = canvas.getContext('2d')
+          ctx?.drawImage(img, 0, 0, width, height)
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.7) // Compress to 70% quality JPEG
+          setFormData(prev => ({ ...prev, profilePhoto: dataUrl }))
+        }
+        img.src = event.target?.result as string
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const startCamera = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true })
+      setStream(mediaStream)
+      setIsCameraOpen(true)
+      // Small delay to ensure video element is mounted
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream
+        }
+      }, 100)
+    } catch (err) {
+      console.error("Error accessing camera:", err)
+      setError("Could not access camera. Please check permissions.")
+    }
+  }
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop())
+      setStream(null)
+    }
+    setIsCameraOpen(false)
+  }
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current
+      const canvas = canvasRef.current
+      const context = canvas.getContext('2d')
+
+      if (context) {
+        // Set canvas dimensions to match video but limit size
+        const MAX_DIM = 800
+        let w = video.videoWidth
+        let h = video.videoHeight
+        
+        if (w > h && w > MAX_DIM) {
+            h = (h * MAX_DIM) / w
+            w = MAX_DIM
+        } else if (h > w && h > MAX_DIM) {
+            w = (w * MAX_DIM) / h
+            h = MAX_DIM
+        }
+
+        canvas.width = w
+        canvas.height = h
+        
+        // Draw video frame to canvas
+        context.drawImage(video, 0, 0, w, h)
+        
+        // Convert to data URL with compression
+        const photoUrl = canvas.toDataURL('image/jpeg', 0.7)
+        setFormData(prev => ({ ...prev, profilePhoto: photoUrl }))
+        stopCamera()
+      }
     }
   }
 
@@ -354,7 +468,7 @@ function RegisterContent() {
                   <SelectContent>
                     <SelectItem value="user">Pet Owner</SelectItem>
                     <SelectItem value="zoo_manager">
-                      Zoo Manager / Caretaker
+                      Pet Caretaker (Zoo Manager)
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -373,18 +487,160 @@ function RegisterContent() {
                 />
               </div>
 
-              <div>
-                <Label htmlFor="address" className="mb-2">
-                  Address
-                </Label>
-                <Input
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) =>
-                    setFormData({ ...formData, address: e.target.value })
-                  }
-                />
-              </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="address" className="mb-2">Address</Label>
+                    <Input
+                      id="address"
+                      value={formData.address}
+                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="pincode" className="mb-2">Pincode</Label>
+                    <Input
+                      id="pincode"
+                      placeholder="e.g. 560001"
+                      value={formData.pincode}
+                      onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+
+
+              {formData.role === 'zoo_manager' && (
+                <div className="space-y-4 border-t pt-4 mt-4">
+                  <h3 className="font-semibold text-lg">Professional Details</h3>
+                  
+                  <div className="space-y-3">
+                    <Label>Profile Photo</Label>
+                    
+                    {!isCameraOpen && !formData.profilePhoto && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          className="h-24 flex flex-col gap-2 border-dashed"
+                          onClick={() => document.getElementById('file-upload')?.click()}
+                        >
+                          <Upload className="h-6 w-6 text-gray-500" />
+                          <span className="text-xs text-gray-600">Upload Photo</span>
+                          <input 
+                            id="file-upload" 
+                            type="file" 
+                            accept="image/*" 
+                            className="hidden" 
+                            onChange={handleFileChange}
+                          />
+                        </Button>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          className="h-24 flex flex-col gap-2 border-dashed"
+                          onClick={startCamera}
+                        >
+                          <Camera className="h-6 w-6 text-gray-500" />
+                          <span className="text-xs text-gray-600">Take Photo</span>
+                        </Button>
+                      </div>
+                    )}
+
+                    {isCameraOpen && (
+                      <div className="relative border rounded-lg overflow-hidden bg-black aspect-video">
+                        <video 
+                          ref={videoRef} 
+                          autoPlay 
+                          playsInline 
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4">
+                           <Button type="button" variant="destructive" size="sm" onClick={stopCamera}>Cancel</Button>
+                           <Button type="button" onClick={capturePhoto} className="bg-white text-black hover:bg-gray-200">
+                             <Camera className="h-4 w-4 mr-2" /> Capture
+                           </Button>
+                        </div>
+                        <canvas ref={canvasRef} className="hidden" />
+                      </div>
+                    )}
+
+                    {formData.profilePhoto && !isCameraOpen && (
+                      <div className="relative w-32 h-32 mx-auto sm:mx-0">
+                         <img 
+                           src={formData.profilePhoto} 
+                           alt="Profile Preview" 
+                           className="w-full h-full object-cover rounded-full border-2 border-primary"
+                         />
+                         <button
+                           type="button"
+                           onClick={() => setFormData(prev => ({ ...prev, profilePhoto: '' }))}
+                           className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 shadow-sm hover:bg-red-600"
+                         >
+                           <X className="h-4 w-4" />
+                         </button>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="specialization" className="mb-2">Specialization</Label>
+                      <Input
+                        id="specialization"
+                        placeholder="e.g. Exotic Birds"
+                        value={formData.specialization}
+                        onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="experience" className="mb-2">Experience</Label>
+                      <Input
+                        id="experience"
+                        placeholder="e.g. 5 Years"
+                        value={formData.experience}
+                        onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="serviceCharge" className="mb-2">Service Charge (₹)</Label>
+                      <Input
+                        id="serviceCharge"
+                        type="number"
+                        placeholder="e.g. 1500"
+                        value={formData.serviceCharge}
+                        onChange={(e) => setFormData({ ...formData, serviceCharge: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="companyName" className="mb-2">Company / Agency</Label>
+                      <Input
+                        id="companyName"
+                        placeholder="Your Company or 'Independent'"
+                        value={formData.companyName}
+                        onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="companyIdNumber" className="mb-2">Company ID / License No.</Label>
+                    <Input
+                      id="companyIdNumber"
+                      placeholder="Official ID Number"
+                      value={formData.companyIdNumber}
+                      onChange={(e) => setFormData({ ...formData, companyIdNumber: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+              )}
 
               {error && <p className="text-sm text-red-500">{error}</p>}
 

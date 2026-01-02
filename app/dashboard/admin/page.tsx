@@ -12,6 +12,14 @@ import {
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import {
   Table,
   TableBody,
   TableCell,
@@ -19,6 +27,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage
+} from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { SidebarLayout } from '@/components/sidebar-layout'
 
@@ -30,6 +43,7 @@ function AdminDashboardContent() {
   const [zooManagers, setZooManagers] = useState([])
   const [careRequests, setCareRequests] = useState([])
   const [activeTab, setActiveTab] = useState(tabParam)
+  const [selectedManager, setSelectedManager] = useState<any>(null);
 
   useEffect(() => {
     fetchData()
@@ -97,7 +111,7 @@ function AdminDashboardContent() {
           </Card>
           <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
             <CardHeader>
-              <CardTitle className="text-purple-700">Zoo Managers</CardTitle>
+              <CardTitle className="text-purple-700">Pet Caretakers</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-4xl font-bold text-purple-900">
@@ -124,22 +138,22 @@ function AdminDashboardContent() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
-            <TabsTrigger value="managers">Zoo Managers</TabsTrigger>
+            <TabsTrigger value="managers">Pet Caretakers</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="requests">Care Requests</TabsTrigger>
           </TabsList>
 
           <TabsContent value="managers" id="managers">
-            <Card className="shadow-md">
+            <Card className="shadow-md overflow-hidden">
               <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-100 border-b">
                 <CardTitle className="text-xl">
-                  🔐 Zoo Manager Verification
+                  🔐 Pet Caretaker Verification
                 </CardTitle>
                 <CardDescription>
-                  Approve or remove zoo managers from the platform
+                  Approve or remove pet caretakers from the platform
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -158,9 +172,9 @@ function AdminDashboardContent() {
                           className="text-center text-muted-foreground py-8"
                         >
                           <div className="space-y-2">
-                            <p>No zoo managers registered yet</p>
-                            <p className="text-xs">
-                              Zoo managers will appear here once they register
+                            <p>No pet caretakers registered yet</p>
+                            <p className="text-sm text-gray-500">
+                              Pet caretakers will appear here once they register
                             </p>
                           </div>
                         </TableCell>
@@ -169,10 +183,17 @@ function AdminDashboardContent() {
                       zooManagers.map((manager: any) => (
                         <TableRow
                           key={manager._id}
-                          className={!manager.isVerified ? 'bg-yellow-50' : ''}
+                          className={!manager.isVerified ? 'bg-yellow-50 cursor-pointer hover:bg-yellow-100' : 'cursor-pointer hover:bg-gray-50'}
+                          onClick={() => setSelectedManager(manager)}
                         >
                           <TableCell className="font-medium">
-                            {manager.name}
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-9 w-9 border border-primary/10">
+                                <AvatarImage src={manager.profilePhoto || `https://api.dicebear.com/7.x/avataaars/svg?seed=${manager.name}`} className="object-cover" />
+                                <AvatarFallback>{manager.name[0]}</AvatarFallback>
+                              </Avatar>
+                              {manager.name}
+                            </div>
                           </TableCell>
                           <TableCell>{manager.email}</TableCell>
                           <TableCell>{manager.phone || 'N/A'}</TableCell>
@@ -185,7 +206,7 @@ function AdminDashboardContent() {
                               {manager.isVerified ? '✓ Verified' : '⏳ Pending'}
                             </Badge>
                           </TableCell>
-                          <TableCell>
+                          <TableCell onClick={(e) => e.stopPropagation()}>
                             {!manager.isVerified && (
                               <Button
                                 size="sm"
@@ -219,14 +240,14 @@ function AdminDashboardContent() {
           </TabsContent>
 
           <TabsContent value="users" id="users">
-            <Card className="shadow-md">
+            <Card className="shadow-md overflow-hidden">
               <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 border-b">
                 <CardTitle className="text-xl">👥 All Users</CardTitle>
                 <CardDescription>
                   Complete list of registered users on the platform
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -257,7 +278,7 @@ function AdminDashboardContent() {
                               {user.role === 'user'
                                 ? 'Pet Owner'
                                 : user.role === 'zoo_manager'
-                                ? 'Zoo Manager'
+                                ? 'Pet Caretaker'
                                 : 'Admin'}
                             </Badge>
                           </TableCell>
@@ -397,6 +418,94 @@ function AdminDashboardContent() {
           </TabsContent>
         </Tabs>
       </div>
+
+      <Dialog open={!!selectedManager} onOpenChange={(open) => !open && setSelectedManager(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Caretaker Details</DialogTitle>
+            <DialogDescription>Review caretaker information</DialogDescription>
+          </DialogHeader>
+          {selectedManager && (
+            <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-20 w-20 border-2 border-primary/10">
+                    <AvatarImage src={selectedManager.profilePhoto || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedManager.name}`} className="object-cover" />
+                    <AvatarFallback className="text-2xl">{selectedManager.name[0]}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="text-xl font-bold">{selectedManager.name}</h3>
+                    <p className="text-sm text-gray-500">{selectedManager.email}</p>
+                    <div className="flex gap-2 mt-1">
+                      <Badge variant={selectedManager.isVerified ? "default" : "secondary"}>
+                        {selectedManager.isVerified ? "Verified" : "Pending Verification"}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 border-t pt-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Phone</p>
+                        <p className="font-medium">{selectedManager.phone || "N/A"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Service Charge</p>
+                        <p className="font-medium text-green-700">
+                          {selectedManager.serviceCharge ? `₹${selectedManager.serviceCharge}/session` : "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Company</p>
+                        <p className="font-medium">{selectedManager.companyName || "Independent"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">License ID</p>
+                        <p className="font-medium">{selectedManager.companyIdNumber || "N/A"}</p>
+                      </div>
+                  </div>
+                  
+                  <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Specialization</p>
+                      <div className="bg-gray-50 p-2 rounded text-sm border">
+                        {selectedManager.specialization || "General Pet Care"}
+                      </div>
+                  </div>
+
+                  <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Experience</p>
+                      <p className="text-sm text-gray-700">{selectedManager.experience || "No experience listed"}</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  {!selectedManager.isVerified ? (
+                    <Button 
+                      className="w-full bg-green-600 hover:bg-green-700" 
+                      onClick={() => {
+                        handleVerifyManager(selectedManager._id, true);
+                        setSelectedManager(null);
+                      }}
+                    >
+                      Approve Caretaker
+                    </Button>
+                  ) : (
+                      <Button 
+                      className="w-full" 
+                      variant="destructive"
+                      onClick={() => {
+                        handleVerifyManager(selectedManager._id, false);
+                        setSelectedManager(null);
+                      }}
+                    >
+                      Revoke Verification
+                    </Button>
+                  )}
+                </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </SidebarLayout>
   )
 }

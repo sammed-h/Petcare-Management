@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SidebarLayout } from "@/components/sidebar-layout";
 import { HealthRecords } from "@/components/health-records";
 
@@ -82,6 +83,23 @@ export default function UserDashboard() {
     const data = await res.json();
     if (res.ok) setZooManagers(data.zooManagers);
   };
+
+  const [userName, setUserName] = useState("");
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch("/api/auth/me");
+        const data = await res.json();
+        if (res.ok) {
+          setUserName(data.user.name.split(" ")[0]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user:", error);
+      }
+    };
+    fetchUser();
+  }, []);
 
   const fetchActivities = async (careRequestId: string) => {
     setIsLoadingActivities(true);
@@ -148,9 +166,9 @@ export default function UserDashboard() {
   return (
     <SidebarLayout userRole="user">
       <div className="space-y-6">
-        {/* Welcome Header */}
+      {/* Welcome Header */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-6 text-white">
-          <h1 className="text-3xl font-bold mb-2">Welcome Back! 👋</h1>
+          <h1 className="text-3xl font-bold mb-2">Welcome Back, <span className="capitalize">{userName}</span>! 👋</h1>
           <p className="text-blue-100">
             Manage your pets and track their care activities
           </p>
@@ -337,7 +355,7 @@ export default function UserDashboard() {
                 <DialogTrigger asChild>
                   <Button>Request Care</Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl">
+                <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Request Pet Care</DialogTitle>
                     <DialogDescription>
@@ -355,7 +373,7 @@ export default function UserDashboard() {
                     ) : (
                       <>
                         <div>
-                          <Label>Select Pet</Label>
+                          <Label className='pb-2'>Select Pet</Label>
                           <Select
                             value={careForm.petId}
                             onValueChange={(value) =>
@@ -375,14 +393,14 @@ export default function UserDashboard() {
                           </Select>
                         </div>
                         <div>
-                          <Label>Select Caretaker</Label>
+                          <Label className='pb-2'>Select Caretaker</Label>
                           {zooManagers.length === 0 ? (
                             <div className="p-4 bg-blue-50 border border-blue-200 rounded-md mt-2">
                               <p className="text-sm text-blue-800 font-medium mb-1">
                                 No verified caretakers available yet
                               </p>
                               <p className="text-xs text-blue-700">
-                                Please wait for zoo managers to register and get
+                                Please wait for pet caretakers to register and get
                                 verified by the admin. Check back later or
                                 contact support.
                               </p>
@@ -398,38 +416,129 @@ export default function UserDashboard() {
                                   })
                                 }
                               >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Choose a caretaker" />
+                                <SelectTrigger className="h-auto py-3 [&>span]:flex [&>span]:items-center [&>span]:gap-2 [&>span]:w-full">
+                                  <SelectValue placeholder="Select a professional caretaker..." />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {zooManagers.map((manager: any) => (
                                     <SelectItem
                                       key={manager._id}
                                       value={manager._id}
+                                      className="py-2 cursor-pointer"
                                     >
-                                      <div className="flex flex-col">
-                                        <span className="font-medium">
-                                          {manager.name}
-                                        </span>
-                                        <span className="text-xs text-muted-foreground">
-                                          {manager.email}
-                                        </span>
+                                      <div className="flex justify-between items-center w-full gap-4 min-w-[280px]">
+                                        <div className="flex items-center gap-3">
+                                          <Avatar className="h-9 w-9 border border-primary/10 shrink-0">
+                                            <AvatarImage src={manager.profilePhoto || `https://api.dicebear.com/7.x/avataaars/svg?seed=${manager.name}`} className="object-cover" />
+                                            <AvatarFallback>{manager.name[0]}</AvatarFallback>
+                                          </Avatar>
+                                          <div className="flex flex-col text-left">
+                                            <span className="font-semibold text-gray-900 leading-tight">
+                                              {manager.name}
+                                            </span>
+                                            <span className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
+                                               <span className="truncate max-w-[140px]">{manager.specialization || 'General Care'}</span>
+                                            </span>
+                                          </div>
+                                        </div>
+                                        <div className="font-medium text-green-700 bg-green-50 px-2 py-1 rounded text-xs whitespace-nowrap ml-auto">
+                                          ₹{manager.serviceCharge}
+                                        </div>
                                       </div>
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {zooManagers.length} verified caretaker
-                                {zooManagers.length > 1 ? "s" : ""} available
-                              </p>
+
+                              {/* Selected Caretaker Detailed Preview */}
+                              {careForm.zooManagerId && (() => {
+                                const selectedManager: any = zooManagers.find((m: any) => m._id === careForm.zooManagerId);
+                                if (!selectedManager) return null;
+                                return (
+                                  <div className="mt-4 border rounded-xl overflow-hidden bg-white shadow-sm ring-1 ring-black/5 animate-in fade-in slide-in-from-top-2 duration-300">
+                                    {/* Header */}
+                                    <div className="bg-gray-50/50 p-4 border-b flex justify-between items-start">
+                                      <div className="flex items-start gap-3">
+                                        <Avatar className="h-12 w-12 border-2 border-primary/10">
+                                          <AvatarImage src={selectedManager.profilePhoto || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedManager.name}`} className="object-cover" />
+                                          <AvatarFallback className="text-lg bg-primary/10 text-primary font-bold">{selectedManager.name[0]}</AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                          <div className="flex items-center gap-2">
+                                            <h4 className="font-semibold text-gray-900">{selectedManager.name}</h4>
+                                            {selectedManager.isVerified && (
+                                                <Badge variant="secondary" className="text-[10px] bg-blue-50 text-blue-700 border-blue-100 px-1.5 h-5 flex items-center gap-1">
+                                                  <span className="w-1 h-1 rounded-full bg-blue-600"></span> Verified
+                                                </Badge>
+                                            )}
+                                          </div>
+                                          <div className="text-sm text-gray-500 flex items-center gap-1.5 mt-0.5">
+                                            <span className="font-medium text-gray-700">{selectedManager.companyName || 'Independent'}</span>
+                                            {selectedManager.verification?.companyIdNumber && (
+                                              <>
+                                                <span className="text-gray-300">|</span>
+                                                <span className="text-xs text-gray-500">ID: {selectedManager.verification.companyIdNumber}</span>
+                                              </>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="text-right">
+                                        <div className="text-xl font-bold text-green-700 tracking-tight">₹{selectedManager.serviceCharge}</div>
+                                        <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wide">per session</div>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Details Grid */}
+                                    <div className="p-4 grid grid-cols-2 gap-y-4 gap-x-6 text-sm">
+                                       <div className="col-span-2 sm:col-span-1">
+                                           <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1 block">Specialization</span>
+                                           <div className="font-medium text-gray-900 bg-gray-50 inline-block px-2 py-1 rounded border border-gray-100">
+                                             {selectedManager.specialization || 'General Pet Care'}
+                                           </div>
+                                       </div>
+                                       <div className="col-span-2 sm:col-span-1">
+                                           <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1 block">Rating & Experience</span>
+                                            <div className="flex items-center gap-3">
+                                              <span className="flex items-center gap-1 font-medium">
+                                                {selectedManager.rating || 0} <span className="text-yellow-500">★</span>
+                                              </span>
+                                              <span className="text-gray-300">|</span>
+                                              <span className="text-gray-700">{selectedManager.experience || 'N/A Experience'}</span>
+                                            </div>
+                                       </div>
+
+                                       <div className="col-span-2 border-t pt-3 mt-1">
+                                           <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 block">Contact Information</span>
+                                           <div className="grid grid-cols-2 gap-4">
+                                             <div className="flex items-center gap-2 text-gray-700">
+                                               <div className="w-6 h-6 rounded bg-blue-50 flex items-center justify-center text-blue-600">
+                                                 📧
+                                               </div>
+                                               <span className="text-xs sm:text-sm truncate">{selectedManager.email}</span>
+                                             </div>
+                                             {selectedManager.phone && (
+                                                <div className="flex items-center gap-2 text-gray-700">
+                                                  <div className="w-6 h-6 rounded bg-green-50 flex items-center justify-center text-green-600">
+                                                    📞
+                                                  </div>
+                                                  <span className="text-xs sm:text-sm">{selectedManager.phone}</span>
+                                                </div>
+                                             )}
+                                           </div>
+                                       </div>
+                                    </div>
+                                  </div>
+                                )
+                              })()}
                             </>
                           )}
                         </div>
+
                       </>
                     )}
                     <div>
-                      <Label>Start Date</Label>
+                      <Label className='pb-2'>Start Date</Label>
                       <Input
                         type="date"
                         value={careForm.startDate}
@@ -443,7 +552,7 @@ export default function UserDashboard() {
                       />
                     </div>
                     <div>
-                      <Label>End Date</Label>
+                      <Label className='pb-2'>End Date</Label>
                       <Input
                         type="date"
                         value={careForm.endDate}
@@ -454,7 +563,7 @@ export default function UserDashboard() {
                       />
                     </div>
                     <div>
-                      <Label>Special Notes (Optional)</Label>
+                      <Label className='pb-2'>Special Notes (Optional)</Label>
                       <Textarea
                         value={careForm.notes}
                         onChange={(e) =>
