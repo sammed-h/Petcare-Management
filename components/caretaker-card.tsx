@@ -58,7 +58,7 @@ export function CaretakerCard({ caretaker }: CaretakerProps) {
           </div>
           <Badge variant="secondary" className="flex items-center gap-1">
             <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
-            {caretaker.rating?.toFixed(1) || 'New'}
+            {typeof caretaker.rating === 'number' ? caretaker.rating.toFixed(1) : 'New'}
           </Badge>
         </div>
       </CardHeader>

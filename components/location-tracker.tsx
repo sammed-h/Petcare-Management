@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { MapPin, Navigation } from 'lucide-react'
+import { MapDisplay } from './map-display'
 
 interface LocationData {
   latitude: number
@@ -130,7 +131,7 @@ export function LocationTracker({
                     <p className="text-sm text-blue-700 mt-1">{location.address}</p>
                   )}
                   <p className="text-xs text-blue-600 mt-2">
-                    Lat: {location.latitude.toFixed(6)}, Lng: {location.longitude.toFixed(6)}
+                    Lat: {location.latitude?.toFixed(6) || '0'}, Lng: {location.longitude?.toFixed(6) || '0'}
                   </p>
                   <p className="text-xs text-blue-500 mt-1">
                     Updated: {new Date(location.timestamp).toLocaleString()}
@@ -139,17 +140,12 @@ export function LocationTracker({
               </div>
             </div>
 
-            {/* Google Maps Embed */}
-            <div className="rounded-md overflow-hidden border">
-              <iframe
-                width="100%"
-                height="300"
-                frameBorder="0"
-                style={{ border: 0 }}
-                src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${location.latitude},${location.longitude}&zoom=15`}
-                allowFullScreen
-              />
-            </div>
+            {/* Leaflet Map Display */}
+            <MapDisplay 
+              latitude={location.latitude} 
+              longitude={location.longitude} 
+              address={location.address}
+            />
 
             <a
               href={`https://www.google.com/maps?q=${location.latitude},${location.longitude}`}

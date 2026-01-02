@@ -1,3 +1,4 @@
+import { Navbar } from '@/components/navbar';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,24 +20,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}
-      <nav className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <Link href="/" className="flex items-center gap-2">
-            <PawPrint className="h-8 w-8 text-blue-600" />
-            <span className="text-2xl font-bold text-gray-900">PetCare</span>
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/login">
-              <Button variant="ghost" size="lg">Login</Button>
-            </Link>
-            <Link href="/register">
-              <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
-                Get Started
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Hero Section */}
       <section className="bg-gradient-to-b from-blue-50 to-white py-20">
@@ -60,12 +44,16 @@ export default function Home() {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
+              <Link href="/caretakers">
+                <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-blue-600 text-blue-600 hover:bg-blue-50">
+                  Check the pet caretaker
+                </Button>
+              </Link>
               <Link href="/register?role=zoo_manager">
-                <Button size="lg" variant="outline" className="text-lg px-8 py-6">
+                <Button size="lg" variant="ghost" className="text-lg px-8 py-6">
                   Become a Caretaker
                 </Button>
               </Link>
-
             </div>
 
             {/* Search Bar */}

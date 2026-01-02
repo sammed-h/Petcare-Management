@@ -14,6 +14,7 @@ import {
   Clock,
   MapPin
 } from 'lucide-react'
+import { MapDisplay } from './map-display'
 
 interface ActivityRecord {
   _id: string
@@ -193,12 +194,35 @@ export function HealthRecords({ activities, isLoading = false }: { activities: A
                           </div>
 
                           {activity.location && (
-                            <div className="flex items-start gap-1 text-xs">
-                              <MapPin className="h-3 w-3 mt-0.5" />
-                              <span>
-                                {activity.location.address || 
-                                  `${activity.location.latitude.toFixed(4)}, ${activity.location.longitude.toFixed(4)}`}
-                              </span>
+                            <div className="space-y-2">
+                              <div className="flex items-start gap-1 text-xs text-blue-600 font-medium">
+                                <MapPin className="h-3 w-3 mt-0.5" />
+                                <span>
+                                  {activity.location.address || 
+                                    `${activity.location.latitude?.toFixed(4) || '0'}, ${activity.location.longitude?.toFixed(4) || '0'}`}
+                                </span>
+                              </div>
+                              
+                              {/* Leaflet Map for Activity */}
+                              {activity.location.latitude && activity.location.longitude && (
+                                <div className="space-y-2">
+                                  <MapDisplay 
+                                    latitude={activity.location.latitude} 
+                                    longitude={activity.location.longitude} 
+                                    address={activity.location.address}
+                                    height="150px"
+                                  />
+                                  <a
+                                    href={`https://www.google.com/maps?q=${activity.location.latitude},${activity.location.longitude}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs text-blue-600 hover:underline inline-flex items-center gap-1"
+                                  >
+                                    <MapPin className="h-3 w-3" />
+                                    Open in Google Maps
+                                  </a>
+                                </div>
+                              )}
                             </div>
                           )}
 
