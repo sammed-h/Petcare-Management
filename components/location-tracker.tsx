@@ -44,7 +44,7 @@ export function LocationTracker({
         // Get address from coordinates using Google Geocoding API
         try {
           const response = await fetch(
-            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${locationData.latitude},${locationData.longitude}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
+            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${locationData.latitude},${locationData.longitude}&key=${process.env.GOOGLE_MAPS_API_KEY}`
           )
           const data = await response.json()
           if (data.results && data.results[0]) {
