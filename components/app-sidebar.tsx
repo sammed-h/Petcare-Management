@@ -11,9 +11,10 @@ import {
   PawPrint,
   Calendar,
   Activity,
-  Shield,
   Settings,
   LogOut,
+  User,
+  Shield,
 } from "lucide-react"
 
 import {
@@ -49,7 +50,7 @@ const publicNavItems = [
     description: "Create account to manage your pets",
   },
   {
-    title: "Register as Zoo Manager",
+    title: "Register as Pet Caretaker",
     url: "/register?role=zoo_manager",
     icon: Users,
     description: "Become a certified pet caretaker",
@@ -72,6 +73,11 @@ const petOwnerNavItems = [
     url: "/dashboard/user#requests",
     icon: Calendar,
   },
+  {
+    title: "Profile",
+    url: "/dashboard/user/profile",
+    icon: User,
+  },
 ]
 
 const zooManagerNavItems = [
@@ -89,6 +95,11 @@ const zooManagerNavItems = [
     title: "Activities",
     url: "/dashboard/zoo-manager#activities",
     icon: Activity,
+  },
+  {
+    title: "Profile",
+    url: "/dashboard/zoo-manager/profile",
+    icon: User,
   },
 ]
 
@@ -186,13 +197,13 @@ export function AppSidebar({ userRole }: { userRole?: string }) {
                   <div className="space-y-1">
                     <p className="font-medium text-foreground">1. Create Account</p>
                     <p className="text-xs text-muted-foreground">
-                      Register as Pet Owner or Zoo Manager
+                      Register as Pet Owner or Pet Caretaker
                     </p>
                   </div>
                   <div className="space-y-1">
                     <p className="font-medium text-foreground">2. Admin Approval</p>
                     <p className="text-xs text-muted-foreground">
-                      Zoo Managers need admin verification
+                      Pet Caretakers need admin verification
                     </p>
                   </div>
                   <div className="space-y-1">
