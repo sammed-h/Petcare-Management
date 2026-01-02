@@ -10,7 +10,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { ReauthModal } from '@/components/reauth-modal'
 import { PhotoUpload } from '@/components/photo-upload'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { format } from 'date-fns'
 
 interface ProfileEditorProps {
   user: any
