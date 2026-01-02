@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
+import { signToken } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,21 +26,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!process.env.JWT_SECRET) {
-      console.error('CRITICAL: JWT_SECRET is not defined in environment variables');
-      return NextResponse.json(
-        { error: 'Server configuration error' },
-        { status: 500 }
-      );
-    }
+    const token = await signToken({ 
+      userId: user._id.toString(), 
+      email: user.email, 
+      role: user.role 
+    });
 
-    const token = jwt.sign(
-      { userId: user._id, email: user.email, role: user.role },
-      process.env.JWT_SECRET,
-      { algorithm: 'HS256', expiresIn: '7d' }
-    );
-
-    console.log(`[LOGIN API] Token generated for ${user.email} using HS256`);
+    console.log(`[LOGIN API] Token generated for ${user.email}`);
 
     const response = NextResponse.json(
       { 
