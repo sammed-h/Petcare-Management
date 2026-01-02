@@ -6,33 +6,33 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   
   const secretStr = process.env.JWT_SECRET;
+  const isDashboard = pathname.startsWith('/dashboard')
+
   if (!secretStr) {
-    console.error(`MIDDLEWARE CRITICAL ERROR: JWT_SECRET is not defined! Path: ${pathname}`);
-    // If it's a dashboard route, we MUST have a secret to verify access
-    if (pathname.startsWith('/dashboard')) {
-       return NextResponse.redirect(new URL('/login', request.url))
+    if (isDashboard) {
+      console.error(`[MIDDLEWARE] CRITICAL ERROR: JWT_SECRET is not defined! Access denied to ${pathname}`);
+      return NextResponse.redirect(new URL('/login', request.url))
     }
     return NextResponse.next();
   }
 
   const JWT_SECRET = new TextEncoder().encode(secretStr);
 
-  // Protected routes
-  const isDashboard = pathname.startsWith('/dashboard')
-
   if (isDashboard) {
     const token = request.cookies.get('token')?.value
 
     if (!token) {
-      // No token, redirect to login
+      console.log(`[MIDDLEWARE] No token found for dashboard route: ${pathname}`);
       const url = new URL('/login', request.url)
       url.searchParams.set('redirect', pathname)
       return NextResponse.redirect(url)
     }
 
     try {
-      // Verify token
-      const { payload } = await jwtVerify(token, JWT_SECRET)
+      // Verify token with explicit HS256 algorithm
+      const { payload } = await jwtVerify(token, JWT_SECRET, {
+        algorithms: ['HS256']
+      })
 
       // Check role-based access
       const userRole = payload.role as string
@@ -52,13 +52,15 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/login', request.url))
       }
 
-      // Token is valid, allow access
       return NextResponse.next()
-    } catch (error) {
-      // Invalid token, redirect to login
+    } catch (error: any) {
+      console.error(`[MIDDLEWARE] Token verification failed for ${pathname}:`, error.message);
+      // Clean up invalid cookie by redirecting with a fresh start
       const url = new URL('/login', request.url)
       url.searchParams.set('redirect', pathname)
-      return NextResponse.redirect(url)
+      const response = NextResponse.redirect(url)
+      response.cookies.delete('token')
+      return response
     }
   }
 
