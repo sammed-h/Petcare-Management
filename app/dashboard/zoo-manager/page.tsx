@@ -87,6 +87,23 @@ export default function ZooManagerDashboard() {
     }
   }
 
+  const [userName, setUserName] = useState("");
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch("/api/auth/me");
+        const data = await res.json();
+        if (res.ok) {
+          setUserName(data.user.name.split(" ")[0]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user:", error);
+      }
+    };
+    fetchUser();
+  }, []);
+
   const pendingRequests = careRequests.filter(
     (r: any) => r.status === 'pending'
   )
@@ -102,7 +119,7 @@ export default function ZooManagerDashboard() {
       <div className="space-y-6">
         {/* Welcome Header */}
         <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-lg p-6 text-white">
-          <h1 className="text-3xl font-bold mb-2">Zoo Manager Dashboard 🐾</h1>
+          <h1 className="text-3xl font-bold mb-2">Welcome Back, <span className="capitalize">{userName || "Pet Caretaker"}</span>! 🐾</h1>
           <p className="text-green-100">
             Manage care requests and log pet activities
           </p>

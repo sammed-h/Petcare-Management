@@ -21,7 +21,7 @@ export function SidebarLayout({
               <div className="ml-4 flex-1">
                 <h1 className="text-lg font-semibold">
                   {userRole === "admin" && "Admin Dashboard"}
-                  {userRole === "zoo_manager" && "Zoo Manager Dashboard"}
+                  {userRole === "zoo_manager" && "Pet Caretaker Dashboard"}
                   {userRole === "user" && "Pet Owner Dashboard"}
                   {!userRole && "Pet Care System"}
                 </h1>

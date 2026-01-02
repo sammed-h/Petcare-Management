@@ -65,6 +65,25 @@ export default function Home() {
                   Become a Caretaker
                 </Button>
               </Link>
+
+            </div>
+
+            {/* Search Bar */}
+            <div className="mt-12 max-w-lg mx-auto bg-white p-2 rounded-xl shadow-lg border border-gray-100 flex items-center gap-2">
+              <MapPin className="ml-3 h-5 w-5 text-gray-400" />
+              <form action="/caretakers" className="flex-1 flex gap-2">
+                <input 
+                  name="pincode"
+                  type="text" 
+                  placeholder="Enter Pincode (e.g. 560001)"
+                  className="flex-1 outline-none text-gray-700 placeholder:text-gray-400"
+                  pattern="[0-9]{6}"
+                  title="Please enter a valid 6-digit pincode"
+                />
+                <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                  Search
+                </Button>
+              </form>
             </div>
           </div>
         </div>
@@ -187,7 +206,7 @@ export default function Home() {
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
-                    <span>Professional zoo managers</span>
+                    <span>Verified pet caretakers</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
@@ -285,7 +304,7 @@ export default function Home() {
               </div>
               <h3 className="text-xl font-semibold mb-2">Find a Caretaker</h3>
               <p className="text-gray-600">
-                Browse verified zoo managers and request care for your desired dates
+                Browse verified pet caretakers and request care for your desired dates
               </p>
             </div>
 

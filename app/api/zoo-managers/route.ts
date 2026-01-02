@@ -17,6 +17,12 @@ export async function GET(req: NextRequest) {
       isVerified: true 
     }).select('-password');
     
+    console.log(`Found ${zooManagers.length} zoo managers`);
+    if (zooManagers.length > 0) {
+      console.log('First manager keys:', Object.keys(zooManagers[0].toObject()));
+      console.log('First manager profilePhoto exists:', !!zooManagers[0].profilePhoto);
+    }
+
     return NextResponse.json({ zooManagers }, { status: 200 });
   } catch (error) {
     console.error('Get zoo managers error:', error);
