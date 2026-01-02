@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Activity from '@/models/Activity';
+import CareRequest from '@/models/CareRequest'; // Explicit import for registration
+import Pet from '@/models/Pet'; // Explicit import for registration
+import User from '@/models/User'; // Explicit import for registration
 import { verifyToken } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
@@ -25,9 +28,15 @@ export async function GET(req: NextRequest) {
       .sort({ timestamp: -1 });
     
     return NextResponse.json({ activities }, { status: 200 });
-  } catch (error) {
-    console.error('Get activities error:', error);
-    return NextResponse.json({ error: 'Failed to fetch activities' }, { status: 500 });
+  } catch (error: any) {
+    console.error('Get activities error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    return NextResponse.json({ 
+      error: 'Failed to fetch activities: ' + (error.message || 'Internal Server Error') 
+    }, { status: 500 });
   }
 }
 
@@ -56,8 +65,14 @@ export async function POST(req: NextRequest) {
       { message: 'Activity logged', activity },
       { status: 201 }
     );
-  } catch (error) {
-    console.error('Create activity error:', error);
-    return NextResponse.json({ error: 'Failed to log activity' }, { status: 500 });
+  } catch (error: any) {
+    console.error('Create activity error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    return NextResponse.json({ 
+      error: 'Failed to log activity: ' + (error.message || 'Internal Server Error') 
+    }, { status: 500 });
   }
 }
