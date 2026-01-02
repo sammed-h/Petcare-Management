@@ -2,16 +2,20 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { jwtVerify } from 'jose'
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET
-)
-
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   
-  if (!process.env.JWT_SECRET) {
-    console.warn('MIDDLEWARE ALERT: JWT_SECRET is not defined in the Edge environment!');
+  const secretStr = process.env.JWT_SECRET;
+  if (!secretStr) {
+    console.error(`MIDDLEWARE CRITICAL ERROR: JWT_SECRET is not defined! Path: ${pathname}`);
+    // If it's a dashboard route, we MUST have a secret to verify access
+    if (pathname.startsWith('/dashboard')) {
+       return NextResponse.redirect(new URL('/login', request.url))
+    }
+    return NextResponse.next();
   }
+
+  const JWT_SECRET = new TextEncoder().encode(secretStr);
 
   // Protected routes
   const isDashboard = pathname.startsWith('/dashboard')

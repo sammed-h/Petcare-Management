@@ -36,9 +36,9 @@ async function getCaretakers(filters: { pincode?: string; name?: string; company
   const total = await User.countDocuments(query);
   
   return {
-    caretakers: caretakers.map(c => ({
+    caretakers: caretakers.map((c: any) => ({
       ...c,
-      _id: c._id.toString(),
+      _id: c._id?.toString(),
       createdAt: c.createdAt?.toString(),
       verification: c.verification || {}
     })),
