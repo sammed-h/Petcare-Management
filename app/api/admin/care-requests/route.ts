@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import CareRequest from '@/models/CareRequest';
+import Pet from '@/models/Pet'; // Explicit import for registration
+import User from '@/models/User'; // Explicit import for registration
 import { verifyToken } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {

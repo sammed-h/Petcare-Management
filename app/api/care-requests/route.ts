@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import CareRequest from '@/models/CareRequest';
+import Pet from '@/models/Pet'; // Explicit import for registration
+import User from '@/models/User'; // Explicit import for registration
 import { verifyToken } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
@@ -26,9 +28,15 @@ export async function GET(req: NextRequest) {
       .sort({ createdAt: -1 });
     
     return NextResponse.json({ requests }, { status: 200 });
-  } catch (error) {
-    console.error('Get care requests error:', error);
-    return NextResponse.json({ error: 'Failed to fetch requests' }, { status: 500 });
+  } catch (error: any) {
+    console.error('Get care requests error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    return NextResponse.json({ 
+      error: 'Failed to fetch requests: ' + (error.message || 'Internal Server Error') 
+    }, { status: 500 });
   }
 }
 
@@ -57,8 +65,14 @@ export async function POST(req: NextRequest) {
       { message: 'Care request created', careRequest },
       { status: 201 }
     );
-  } catch (error) {
-    console.error('Create care request error:', error);
-    return NextResponse.json({ error: 'Failed to create request' }, { status: 500 });
+  } catch (error: any) {
+    console.error('Create care request error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    return NextResponse.json({ 
+      error: 'Failed to create request: ' + (error.message || 'Internal Server Error') 
+    }, { status: 500 });
   }
 }

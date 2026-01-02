@@ -11,7 +11,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+    if (!process.env.JWT_SECRET) {
+      console.error('CRITICAL: JWT_SECRET missing in api/auth/me');
+      return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET) as any;
     await dbConnect();
 
     const user = await User.findById(decoded.userId).select("name role");
@@ -21,8 +26,14 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json({ user }, { status: 200 });
-  } catch (error) {
-    console.error("Auth check error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  } catch (error: any) {
+    console.error("Auth check error details:", {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    return NextResponse.json({ 
+      error: "Authentication failed: " + (error.message || "Internal Server Error") 
+    }, { status: 500 });
   }
 }

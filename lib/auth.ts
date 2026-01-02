@@ -15,7 +15,12 @@ export async function verifyToken(req: NextRequest): Promise<TokenPayload | null
       return null;
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as TokenPayload;
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET is missing');
+      return null;
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET) as TokenPayload;
     return decoded;
   } catch (error) {
     return null;

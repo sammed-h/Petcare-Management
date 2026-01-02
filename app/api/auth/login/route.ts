@@ -26,11 +26,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!process.env.JWT_SECRET) {
+      console.error('CRITICAL: JWT_SECRET is not defined in environment variables');
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      );
+    }
+
     const token = jwt.sign(
       { userId: user._id, email: user.email, role: user.role },
-      process.env.JWT_SECRET!,
+      process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
+
+    console.log('Login successful for:', user.email, 'NODE_ENV:', process.env.NODE_ENV);
 
     const response = NextResponse.json(
       { 
@@ -49,14 +59,19 @@ export async function POST(req: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
+      path: '/', // Ensure cookie is available across all routes
       maxAge: 60 * 60 * 24 * 7,
     });
 
     return response;
-  } catch (error) {
-    console.error('Login error:', error);
+  } catch (error: any) {
+    console.error('Login error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     return NextResponse.json(
-      { error: 'Login failed' },
+      { error: 'Login failed: ' + (error.message || 'Internal Server Error') },
       { status: 500 }
     );
   }
