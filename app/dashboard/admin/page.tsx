@@ -44,6 +44,7 @@ function AdminDashboardContent() {
   const [careRequests, setCareRequests] = useState([])
   const [activeTab, setActiveTab] = useState(tabParam)
   const [selectedManager, setSelectedManager] = useState<any>(null);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
 
   useEffect(() => {
     fetchData()
@@ -270,8 +271,20 @@ function AdminDashboardContent() {
                       </TableRow>
                     ) : (
                       users.map((user: any) => (
-                        <TableRow key={user._id}>
-                          <TableCell>{user.name}</TableCell>
+                        <TableRow 
+                          key={user._id}
+                          className="cursor-pointer hover:bg-gray-50"
+                          onClick={() => setSelectedUser(user)}
+                        >
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-9 w-9 border border-primary/10">
+                                <AvatarImage src={user.profilePhoto || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`} className="object-cover" />
+                                <AvatarFallback>{user.name[0]}</AvatarFallback>
+                              </Avatar>
+                              {user.name}
+                            </div>
+                          </TableCell>
                           <TableCell>{user.email}</TableCell>
                           <TableCell>
                             <Badge variant="outline">
@@ -341,11 +354,24 @@ function AdminDashboardContent() {
                                 <CardTitle className="text-lg">
                                   {request.pet?.name || 'Unknown Pet'}
                                 </CardTitle>
-                                <CardDescription className="mt-1">
-                                  <span className="font-medium">Owner:</span>{' '}
-                                  {request.owner?.name} |
-                                  <span className="font-medium"> Manager:</span>{' '}
-                                  {request.zooManager?.name}
+                                <CardDescription className="mt-1 flex items-center gap-3 flex-wrap">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="font-medium text-xs text-gray-400 uppercase tracking-tight">Owner:</span>
+                                    <Avatar className="h-6 w-6 border border-primary/5">
+                                      <AvatarImage src={request.owner?.profilePhoto || `https://api.dicebear.com/7.x/avataaars/svg?seed=${request.owner?.name}`} />
+                                      <AvatarFallback className="text-[10px]">{request.owner?.name?.[0]}</AvatarFallback>
+                                    </Avatar>
+                                    <span className="text-sm font-medium text-gray-700">{request.owner?.name}</span>
+                                  </div>
+                                  <span className="text-gray-300">|</span>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="font-medium text-xs text-gray-400 uppercase tracking-tight">Manager:</span>
+                                    <Avatar className="h-6 w-6 border border-primary/5">
+                                      <AvatarImage src={request.zooManager?.profilePhoto || `https://api.dicebear.com/7.x/avataaars/svg?seed=${request.zooManager?.name}`} />
+                                      <AvatarFallback className="text-[10px]">{request.zooManager?.name?.[0]}</AvatarFallback>
+                                    </Avatar>
+                                    <span className="text-sm font-medium text-gray-700">{request.zooManager?.name}</span>
+                                  </div>
                                 </CardDescription>
                               </div>
                             </div>
@@ -387,17 +413,29 @@ function AdminDashboardContent() {
                               <p className="text-muted-foreground">
                                 Owner Email
                               </p>
-                              <p className="font-medium">
-                                {request.owner?.email}
-                              </p>
+                              <div className="flex items-center gap-2">
+                                <Avatar className="h-5 w-5 border border-primary/5">
+                                  <AvatarImage src={request.owner?.profilePhoto || `https://api.dicebear.com/7.x/avataaars/svg?seed=${request.owner?.name}`} />
+                                  <AvatarFallback className="text-[10px]">{request.owner?.name?.[0]}</AvatarFallback>
+                                </Avatar>
+                                <p className="font-medium">
+                                  {request.owner?.email}
+                                </p>
+                              </div>
                             </div>
                             <div>
                               <p className="text-muted-foreground">
                                 Manager Email
                               </p>
-                              <p className="font-medium">
-                                {request.zooManager?.email}
-                              </p>
+                              <div className="flex items-center gap-2">
+                                <Avatar className="h-5 w-5 border border-primary/5">
+                                  <AvatarImage src={request.zooManager?.profilePhoto || `https://api.dicebear.com/7.x/avataaars/svg?seed=${request.zooManager?.name}`} />
+                                  <AvatarFallback className="text-[10px]">{request.zooManager?.name?.[0]}</AvatarFallback>
+                                </Avatar>
+                                <p className="font-medium">
+                                  {request.zooManager?.email}
+                                </p>
+                              </div>
                             </div>
                           </div>
                           {request.notes && (
@@ -501,6 +539,68 @@ function AdminDashboardContent() {
                       Revoke Verification
                     </Button>
                   )}
+                </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>User Details</DialogTitle>
+            <DialogDescription>Full details of the registered user</DialogDescription>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-20 w-20 border-2 border-primary/10">
+                    <AvatarImage src={selectedUser.profilePhoto || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedUser.name}`} className="object-cover" />
+                    <AvatarFallback className="text-2xl">{selectedUser.name[0]}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="text-xl font-bold">{selectedUser.name}</h3>
+                    <p className="text-sm text-gray-500">{selectedUser.email}</p>
+                    <div className="flex gap-2 mt-1">
+                      <Badge variant="outline" className="capitalize">
+                        {selectedUser.role.replace('_', ' ')}
+                      </Badge>
+                      <Badge variant={selectedUser.isVerified ? "default" : "secondary"}>
+                        {selectedUser.isVerified ? "Verified" : "Pending"}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 border-t pt-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Phone</p>
+                        <p className="font-medium">{selectedUser.phone || "N/A"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Pincode</p>
+                        <p className="font-medium">{selectedUser.pincode || "N/A"}</p>
+                      </div>
+                      <div className="col-span-2">
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Address</p>
+                        <p className="font-medium">{selectedUser.address || "No address listed"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Member Since</p>
+                        <p className="font-medium">{new Date(selectedUser.createdAt).toLocaleDateString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Status</p>
+                        <p className="font-medium">{selectedUser.isVerified ? "Active & Verified" : "Pending Approval"}</p>
+                      </div>
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <Button variant="outline" className="w-full" onClick={() => setSelectedUser(null)}>
+                    Close
+                  </Button>
                 </div>
             </div>
           )}
