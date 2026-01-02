@@ -37,10 +37,10 @@ export async function POST(req: NextRequest) {
     const token = jwt.sign(
       { userId: user._id, email: user.email, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: '7d' }
+      { algorithm: 'HS256', expiresIn: '7d' }
     );
 
-    console.log('Login successful for:', user.email, 'NODE_ENV:', process.env.NODE_ENV);
+    console.log(`[LOGIN API] Token generated for ${user.email} using HS256`);
 
     const response = NextResponse.json(
       { 
@@ -55,11 +55,14 @@ export async function POST(req: NextRequest) {
       { status: 200 }
     );
 
+    // Optimized cookie settings for deployment stability
+    const isProduction = process.env.NODE_ENV === 'production';
+    
     response.cookies.set('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction, // Only true on HTTPS production
       sameSite: 'lax',
-      path: '/', // Ensure cookie is available across all routes
+      path: '/',
       maxAge: 60 * 60 * 24 * 7,
     });
 
