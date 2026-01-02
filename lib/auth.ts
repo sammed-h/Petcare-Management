@@ -1,10 +1,27 @@
 import { NextRequest } from 'next/server';
-import jwt from 'jsonwebtoken';
+import { SignJWT, jwtVerify } from 'jose';
 
 export interface TokenPayload {
   userId: string;
   email: string;
   role: string;
+}
+
+const getSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET is not defined');
+  }
+  return new TextEncoder().encode(secret);
+};
+
+export async function signToken(payload: TokenPayload): Promise<string> {
+  const secret = getSecret();
+  return await new SignJWT({ ...payload })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('7d')
+    .sign(secret);
 }
 
 export async function verifyToken(req: NextRequest): Promise<TokenPayload | null> {
@@ -15,14 +32,14 @@ export async function verifyToken(req: NextRequest): Promise<TokenPayload | null
       return null;
     }
 
-    if (!process.env.JWT_SECRET) {
-      console.error('JWT_SECRET is missing');
-      return null;
-    }
+    const secret = getSecret();
+    const { payload } = await jwtVerify(token, secret, {
+      algorithms: ['HS256'],
+    });
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET) as TokenPayload;
-    return decoded;
+    return payload as unknown as TokenPayload;
   } catch (error) {
+    console.error('[AUTH LIB] Verification failed:', error instanceof Error ? error.message : error);
     return null;
   }
 }

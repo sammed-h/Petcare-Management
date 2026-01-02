@@ -1,25 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
 import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
+import { verifyToken } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
   try {
-    const token = req.cookies.get("token")?.value;
+    const payload = await verifyToken(req);
 
-    if (!token) {
+    if (!payload) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (!process.env.JWT_SECRET) {
-      console.error('CRITICAL: JWT_SECRET missing in api/auth/me');
-      return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET) as any;
     await dbConnect();
-
-    const user = await User.findById(decoded.userId).select("name role");
+    const user = await User.findById(payload.userId).select("name role");
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -27,13 +20,9 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ user }, { status: 200 });
   } catch (error: any) {
-    console.error("Auth check error details:", {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
-    });
+    console.error("Auth check error details:", error.message);
     return NextResponse.json({ 
-      error: "Authentication failed: " + (error.message || "Internal Server Error") 
+      error: "Authentication failed"
     }, { status: 500 });
   }
 }
