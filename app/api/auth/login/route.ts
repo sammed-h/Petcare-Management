@@ -39,7 +39,9 @@ export async function POST(req: NextRequest) {
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
-/* ... rest of the successful login logic ... */
+
+    console.log('Login successful for:', user.email, 'NODE_ENV:', process.env.NODE_ENV);
+
     const response = NextResponse.json(
       { 
         message: 'Login successful',
@@ -57,6 +59,7 @@ export async function POST(req: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
+      path: '/', // Ensure cookie is available across all routes
       maxAge: 60 * 60 * 24 * 7,
     });
 

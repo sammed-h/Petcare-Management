@@ -8,6 +8,10 @@ const JWT_SECRET = new TextEncoder().encode(
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+  
+  if (!process.env.JWT_SECRET) {
+    console.warn('MIDDLEWARE ALERT: JWT_SECRET is not defined in the Edge environment!');
+  }
 
   // Protected routes
   const isDashboard = pathname.startsWith('/dashboard')
