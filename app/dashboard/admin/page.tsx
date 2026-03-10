@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -45,6 +46,8 @@ function AdminDashboardContent() {
   const [activeTab, setActiveTab] = useState(tabParam)
   const [selectedManager, setSelectedManager] = useState<any>(null);
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [isVerifying, setIsVerifying] = useState<string | null>(null);
+  const [isLoadingRequests, setIsLoadingRequests] = useState(true);
 
   useEffect(() => {
     fetchData()
@@ -69,10 +72,15 @@ function AdminDashboardContent() {
     }
 
     // Fetch all care requests
-    const requestsRes = await fetch('/api/admin/care-requests')
-    if (requestsRes.ok) {
-      const data = await requestsRes.json()
-      setCareRequests(data.requests || [])
+    setIsLoadingRequests(true)
+    try {
+      const requestsRes = await fetch('/api/admin/care-requests')
+      if (requestsRes.ok) {
+        const data = await requestsRes.json()
+        setCareRequests(data.requests || [])
+      }
+    } finally {
+      setIsLoadingRequests(false)
     }
   }
 
@@ -80,12 +88,19 @@ function AdminDashboardContent() {
     managerId: string,
     isVerified: boolean
   ) => {
-    const res = await fetch(`/api/admin/users/${managerId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isVerified }),
-    })
-    if (res.ok) fetchData()
+    setIsVerifying(managerId)
+    try {
+      const res = await fetch(`/api/admin/users/${managerId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isVerified }),
+      })
+      if (res.ok) {
+        await fetchData()
+      }
+    } finally {
+      setIsVerifying(null)
+    }
   }
 
   return (
@@ -172,12 +187,19 @@ function AdminDashboardContent() {
                           colSpan={5}
                           className="text-center text-muted-foreground py-8"
                         >
-                          <div className="space-y-2">
-                            <p>No pet caretakers registered yet</p>
-                            <p className="text-sm text-gray-500">
-                              Pet caretakers will appear here once they register
-                            </p>
-                          </div>
+                          {isLoadingRequests ? (
+                            <div className="flex flex-col items-center justify-center py-4">
+                              <Loader2 className="h-8 w-8 animate-spin text-indigo-600 mb-2" />
+                              <p>Loading caretakers...</p>
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              <p>No pet caretakers registered yet</p>
+                              <p className="text-sm text-gray-500">
+                                Pet caretakers will appear here once they register
+                              </p>
+                            </div>
+                          )}
                         </TableCell>
                       </TableRow>
                     ) : (
@@ -211,23 +233,27 @@ function AdminDashboardContent() {
                             {!manager.isVerified && (
                               <Button
                                 size="sm"
+                                disabled={isVerifying === manager._id}
                                 onClick={() =>
                                   handleVerifyManager(manager._id, true)
                                 }
                                 className="bg-green-600 hover:bg-green-700"
                               >
-                                ✓ Approve
+                                {isVerifying === manager._id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : '✓ '}
+                                Approve
                               </Button>
                             )}
                             {manager.isVerified && (
                               <Button
                                 size="sm"
                                 variant="destructive"
+                                disabled={isVerifying === manager._id}
                                 onClick={() =>
                                   handleVerifyManager(manager._id, false)
                                 }
                               >
-                                ✗ Revoke
+                                {isVerifying === manager._id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : '✗ '}
+                                Revoke
                               </Button>
                             )}
                           </TableCell>
@@ -325,7 +351,12 @@ function AdminDashboardContent() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {careRequests.length === 0 ? (
+                {isLoadingRequests ? (
+                  <div className="flex justify-center items-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <span className="ml-2 text-muted-foreground">Loading requests...</span>
+                  </div>
+                ) : careRequests.length === 0 ? (
                   <p className="text-center text-muted-foreground py-8">
                     No care requests yet
                   </p>
@@ -347,9 +378,12 @@ function AdminDashboardContent() {
                         <CardHeader className="pb-3">
                           <div className="flex justify-between items-start">
                             <div className="flex items-start gap-3">
-                              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                                <span className="text-2xl">🐕</span>
-                              </div>
+                              <Avatar className="h-12 w-12 border-2 border-primary/10">
+                                <AvatarImage src={request.pet?.photo || `https://api.dicebear.com/7.x/bottts/svg?seed=${request.pet?.name}`} className="object-cover" />
+                                <AvatarFallback className="bg-blue-100 flex items-center justify-center">
+                                  <span className="text-2xl">🐕</span>
+                                </AvatarFallback>
+                              </Avatar>
                               <div>
                                 <CardTitle className="text-lg">
                                   {request.pet?.name || 'Unknown Pet'}
@@ -520,22 +554,26 @@ function AdminDashboardContent() {
                   {!selectedManager.isVerified ? (
                     <Button 
                       className="w-full bg-green-600 hover:bg-green-700" 
-                      onClick={() => {
-                        handleVerifyManager(selectedManager._id, true);
+                      disabled={isVerifying === selectedManager._id}
+                      onClick={async () => {
+                        await handleVerifyManager(selectedManager._id, true);
                         setSelectedManager(null);
                       }}
                     >
+                      {isVerifying === selectedManager._id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Approve Caretaker
                     </Button>
                   ) : (
                       <Button 
                       className="w-full" 
                       variant="destructive"
-                      onClick={() => {
-                        handleVerifyManager(selectedManager._id, false);
+                      disabled={isVerifying === selectedManager._id}
+                      onClick={async () => {
+                        await handleVerifyManager(selectedManager._id, false);
                         setSelectedManager(null);
                       }}
                     >
+                      {isVerifying === selectedManager._id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Revoke Verification
                     </Button>
                   )}
