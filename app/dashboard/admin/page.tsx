@@ -159,7 +159,7 @@ function AdminDashboardContent() {
             <TabsTrigger value="requests">Care Requests</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="managers" id="managers">
+          <TabsContent value="managers" id="managers" className="max-w-[calc(100vw-2rem)] md:max-w-full">
             <Card className="shadow-md overflow-hidden">
               <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-100 border-b">
                 <CardTitle className="text-xl">
@@ -266,7 +266,7 @@ function AdminDashboardContent() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="users" id="users">
+          <TabsContent value="users" id="users" className="max-w-[calc(100vw-2rem)] md:max-w-full">
             <Card className="shadow-md overflow-hidden">
               <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 border-b">
                 <CardTitle className="text-xl">👥 All Users</CardTitle>
@@ -342,7 +342,7 @@ function AdminDashboardContent() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="requests" id="requests">
+          <TabsContent value="requests" id="requests" className="max-w-[calc(100vw-2rem)] md:max-w-full">
             <Card className="shadow-md">
               <CardHeader className="bg-gradient-to-r from-green-50 to-green-100 border-b">
                 <CardTitle className="text-xl">📊 All Care Requests</CardTitle>
